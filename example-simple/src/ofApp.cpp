@@ -4,21 +4,35 @@
 void ofApp::setup()
 {
 	ofSetWindowShape(1280, 960);
-	if (!mRSSDK.init())
-		return;
 
-	int cW = static_cast<int>(mRSSDK.getWidth());
-	int cH = static_cast<int>(mRSSDK.getHeight());
-	mDepthColorTex.allocate(cW, cH, GL_RGB);
-	mDepthColorPixels = new uint8_t[cW*cH * 3]{0};
-	mNearColor = ofColor(255, 0, 0);
-	mFarColor = ofColor(20, 40, 255);
+	/*
+	Currently init() takes two boolean parameters, i.e. init(true, true)
+	The first parameter tells ofxRSSDK to stream color frames as well as depth frames (default: true)
+	The second parameter tells ofxRSSDK to populate internal texture structures from the raw
+	depth and color frames.  If this is false, the ofApp itself will need to define ofTextures and
+	load the data manually (if ofTextures are desired) (default: true)
+	*/
+	if (!mRSSDK.init())
+	{
+		ofLogError("Unable to create ofxRSSDK object");
+
+	}
+	else
+	{
+		int cW = static_cast<int>(mRSSDK.getWidth());
+		int cH = static_cast<int>(mRSSDK.getHeight());
+		mDepthColorTex.allocate(cW, cH, GL_RGB);
+		mDepthColorPixels = new uint8_t[cW*cH * 3]{0};
+		mNearColor = ofColor(255, 0, 0);
+		mFarColor = ofColor(20, 40, 255);
+	}
 
 }
 
 //--------------------------------------------------------------
 void ofApp::update()
 {
+	//Update updates any of the active streams and populates the associated internal structures
 	mRSSDK.update();
 	depthToColor();
 }
@@ -39,6 +53,7 @@ void ofApp::draw()
 	ofPopMatrix();
 }
 
+// Original depthToColor implementation by Sterling G. Orsten
 void ofApp::depthToColor()
 {
 	int cWidth = mRSSDK.getWidth();

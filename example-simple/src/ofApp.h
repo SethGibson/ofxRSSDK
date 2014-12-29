@@ -29,8 +29,9 @@ public:
 	*/
 private:
 	ofxRSSDK mRSSDK;
-	ofTexture mDepthColorTex;
 
+	//Data for depthToColor
+	ofTexture mDepthColorTex;
 	ofColor mNearColor, mFarColor;
 	uint8_t *mDepthColorPixels;
 };
