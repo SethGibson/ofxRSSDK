@@ -43,7 +43,7 @@ void ofApp::depthToColor()
 {
 	int cWidth = mRSSDK.getWidth();
 	int cHeight = mRSSDK.getHeight();
-	uint16_t *cDepthMap = reinterpret_cast<uint16_t *>(mRSSDK.getRawDepthPixels());
+	uint16_t *cDepthMap = mRSSDK.getRawDepthPixels();
 
 	// Produce a cumulative histogram of depth values
 	if (cDepthMap)
