@@ -18,7 +18,7 @@ public:
 	ofxRSSDK();
 	virtual ~ofxRSSDK();
 
-	bool init();
+	bool init(bool pGrabVideo=true, bool pUseTexture=true);
 	void clear();
 	void setRegistration(bool bUseRegistration = false);
 	void close();

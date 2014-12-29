@@ -47,7 +47,7 @@ ofxRSSDK::~ofxRSSDK()
 }
 
 //--------------------------------------------------------------------
-bool ofxRSSDK::init()
+bool ofxRSSDK::init(bool pGrabVideo, bool pUseTexture)
 {
 	if (isConnected()) {
 		ofLog(OF_LOG_WARNING, "ofxRSSDK: Do not call init while ofxRSSDK is running!");
@@ -55,6 +55,8 @@ bool ofxRSSDK::init()
 	}
 
 	clear();
+	bGrabVideo = pGrabVideo;
+	bUseTexture = pUseTexture;
 	videoBytesPerPixel = 4;
 
 	// allocate
@@ -64,7 +66,7 @@ bool ofxRSSDK::init()
 	videoPixels.allocate(width, height, videoBytesPerPixel);
 	//videoPixelsBack.allocate(width, height, videoBytesPerPixel);
 
-	depthPixels.allocate(width, height, 1);
+	depthPixels.allocate(width, height, 4);
 	distancePixels.allocate(width, height, 1);
 
 	// set
@@ -79,7 +81,7 @@ bool ofxRSSDK::init()
 
 	if (bUseTexture)
 	{
-		depthTex.allocate(width, height, GL_LUMINANCE);
+		depthTex.allocate(width, height, GL_RGBA);
 		videoTex.allocate(width, height, GL_RGBA);
 	}
 
@@ -172,13 +174,6 @@ void ofxRSSDK::update()
 					uint8_t *cBuffer = cRgbData.planes[0];
 					videoPixels.setFromPixels(cBuffer, width, height, 4);
 
-					for (int vid = 0; vid < width*height; vid++)
-					{
-						depthPixels[vid] = (uint8_t)((((float)cBuffer[vid * 4] * 0.2989f) +
-							((float)cBuffer[vid * 4 + 1] * 0.587f) +
-							((float)cBuffer[vid * 4 + 2] * 0.114f)) / 3);
-
-					}
 					cRgbImage->ReleaseAccess(&cRgbData);
 				}
 			}
@@ -199,13 +194,19 @@ void ofxRSSDK::update()
 				distancePixels.setFromPixels(reinterpret_cast<float *>(cDepthData.planes[0]), width, height, 1);
 				cDepthImage->ReleaseAccess(&cDepthData);
 			}
+
+			if (cDepthImage->AcquireAccess(PXCImage::ACCESS_READ, PXCImage::PIXEL_FORMAT_RGB32, &cDepthData) >= PXC_STATUS_NO_ERROR)
+			{
+				depthPixels.setFromPixels(cDepthData.planes[0], width, height, 4);
+				cDepthImage->ReleaseAccess(&cDepthData);
+			}
 		}
 
 		mRealSenseDevice->ReleaseFrame();
 	}
 
 	//updateDepthPixels();
-	depthTex.loadData(depthPixels.getPixels(), width, height, GL_LUMINANCE);
+	depthTex.loadData(depthPixels.getPixels(), width, height, GL_RGBA);
 	videoTex.loadData(videoPixels.getPixels(), width, height, GL_BGRA);
 }
 

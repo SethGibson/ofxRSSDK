@@ -3,7 +3,7 @@
 //--------------------------------------------------------------
 void ofApp::setup()
 {
-	ofSetWindowShape(640, 480);
+	ofSetWindowShape(1280, 480);
 	if (!mRSSDK.init())
 		return;
 }
@@ -19,6 +19,7 @@ void ofApp::draw()
 {
 	ofClear(ofColor::black);
 	mRSSDK.draw(0, 0);
+	mRSSDK.drawDepth(640, 0);
 }
 
 //--------------------------------------------------------------
