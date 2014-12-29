@@ -132,6 +132,8 @@ void ofxRSSDK::close()
 	bIsFrameNew = false;
 	bNeedsUpdate = false;
 	bUpdateTex = false;
+	if (mRealSenseDevice)
+		mRealSenseDevice->Close();
 }
 
 //---------------------------------------------------------------------------
