@@ -6,8 +6,6 @@
 #include "ofxBase3DVideo.h"
 
 
-class ofxRSSDKContext;
-
 /// \class ofxRSSDK
 ///
 /// Base3dVideo implementation of RealSense SDK

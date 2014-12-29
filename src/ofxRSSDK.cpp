@@ -19,7 +19,7 @@ ofxRSSDK::ofxRSSDK()
 	bIsVideoInfrared = false;
 	videoBytesPerPixel = 3;
 
-	kinectDevice = NULL;
+	mRealSenseDevice = NULL;
 
 	targetTiltAngleDeg = 0;
 	currentTiltAngleDeg = 0;
@@ -59,20 +59,20 @@ bool ofxRSSDK::init()
 
 	// allocate
 	depthPixelsRaw.allocate(width, height, 1);
-	depthPixelsRawBack.allocate(width, height, 1);
+	//depthPixelsRawBack.allocate(width, height, 1);
 
 	videoPixels.allocate(width, height, videoBytesPerPixel);
-	videoPixelsBack.allocate(width, height, videoBytesPerPixel);
+	//videoPixelsBack.allocate(width, height, videoBytesPerPixel);
 
 	depthPixels.allocate(width, height, 1);
 	distancePixels.allocate(width, height, 1);
 
 	// set
 	depthPixelsRaw.set(0);
-	depthPixelsRawBack.set(0);
+	//depthPixelsRawBack.set(0);
 
 	videoPixels.set(0);
-	videoPixelsBack.set(0);
+	//videoPixelsBack.set(0);
 
 	depthPixels.set(0);
 	distancePixels.set(0);
@@ -80,7 +80,7 @@ bool ofxRSSDK::init()
 	if (bUseTexture)
 	{
 		depthTex.allocate(width, height, GL_LUMINANCE);
-		videoTex.allocate(width, height, GL_BGRA);
+		videoTex.allocate(width, height, GL_RGBA);
 	}
 
 	bGrabberInited = true;
@@ -88,7 +88,8 @@ bool ofxRSSDK::init()
 	if (!mRealSenseDevice)
 		bGrabberInited = false;
 
-	bGrabberInited = mRealSenseDevice->EnableStream(PXCCapture::STREAM_TYPE_COLOR, width, height, 30) >= PXC_STATUS_NO_ERROR;
+	if (bGrabVideo)
+		bGrabberInited = mRealSenseDevice->EnableStream(PXCCapture::STREAM_TYPE_COLOR, width, height, 30) >= PXC_STATUS_NO_ERROR;
 	bGrabberInited = mRealSenseDevice->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, width, height, 30) >= PXC_STATUS_NO_ERROR;
 	bGrabberInited = mRealSenseDevice->Init() >= PXC_STATUS_NO_ERROR;
 
@@ -104,10 +105,10 @@ void ofxRSSDK::clear()
 	}
 
 	depthPixelsRaw.clear();
-	depthPixelsRawBack.clear();
+	//depthPixelsRawBack.clear();
 
 	videoPixels.clear();
-	videoPixelsBack.clear();
+	//videoPixelsBack.clear();
 
 	depthPixels.clear();
 	distancePixels.clear();
@@ -134,7 +135,9 @@ void ofxRSSDK::close()
 //---------------------------------------------------------------------------
 bool ofxRSSDK::isConnected()
 {
-	return mRealSenseDevice->IsConnected();
+	if (mRealSenseDevice!=nullptr)
+		return mRealSenseDevice->IsConnected();
+	return false;
 }
 
 //--------------------------------------------------------------------
@@ -152,15 +155,58 @@ void ofxRSSDK::update()
 	}
 
 
-	depthPixelsRaw = depthPixelsRawBack;
-	videoPixels = videoPixelsBack;
+	if (mRealSenseDevice->AcquireFrame(false, 0) >= PXC_STATUS_NO_ERROR)
+	{
+		PXCCapture::Sample *cSample = mRealSenseDevice->QuerySample();
+		if (!cSample)
+			return;
 
+		if (bGrabVideo)
+		{
+			PXCImage *cRgbImage = cSample->color;
+			if (cRgbImage)
+			{
+				PXCImage::ImageData cRgbData;
+				if (cRgbImage->AcquireAccess(PXCImage::ACCESS_READ, PXCImage::PIXEL_FORMAT_RGB32, &cRgbData) >= PXC_STATUS_NO_ERROR)
+				{
+					uint8_t *cBuffer = cRgbData.planes[0];
+					videoPixels.setFromPixels(cBuffer, width, height, 4);
 
-	updateDepthPixels();
+					for (int vid = 0; vid < width*height; vid++)
+					{
+						depthPixels[vid] = (uint8_t)((((float)cBuffer[vid * 4] * 0.2989f) +
+							((float)cBuffer[vid * 4 + 1] * 0.587f) +
+							((float)cBuffer[vid * 4 + 2] * 0.114f)) / 3);
 
+					}
+					cRgbImage->ReleaseAccess(&cRgbData);
+				}
+			}
+		}
 
+		PXCImage *cDepthImage = cSample->depth;
+		if (cDepthImage)
+		{
+			PXCImage::ImageData cDepthData;
+			if (cDepthImage->AcquireAccess(PXCImage::ACCESS_READ, PXCImage::PIXEL_FORMAT_DEPTH, &cDepthData) >= PXC_STATUS_NO_ERROR)
+			{
+				depthPixelsRaw.setFromPixels(reinterpret_cast<uint16_t *>(cDepthData.planes[0]), width, height, 1);
+				cDepthImage->ReleaseAccess(&cDepthData);
+			}
+
+			if (cDepthImage->AcquireAccess(PXCImage::ACCESS_READ, PXCImage::PIXEL_FORMAT_DEPTH_F32, &cDepthData) >= PXC_STATUS_NO_ERROR)
+			{
+				distancePixels.setFromPixels(reinterpret_cast<float *>(cDepthData.planes[0]), width, height, 1);
+				cDepthImage->ReleaseAccess(&cDepthData);
+			}
+		}
+
+		mRealSenseDevice->ReleaseFrame();
+	}
+
+	//updateDepthPixels();
 	depthTex.loadData(depthPixels.getPixels(), width, height, GL_LUMINANCE);
-	videoTex.loadData(videoPixels.getPixels(), width, height, bIsVideoInfrared ? GL_LUMINANCE : GL_RGB);
+	videoTex.loadData(videoPixels.getPixels(), width, height, GL_BGRA);
 }
 
 //------------------------------------
