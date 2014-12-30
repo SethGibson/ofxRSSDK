@@ -3,6 +3,7 @@
 
 #include "ofMain.h"
 #include "pxcsensemanager.h"
+#include "pxcprojection.h"
 #include "ofxBase3DVideo.h"
 
 
@@ -32,7 +33,7 @@ public:
 
 	ofVec3f getWorldCoordinateAt(int cx, int cy);
 	ofVec3f getWorldCoordinateAt(float cx, float cy, float wz);
-
+	vector<ofVec3f> getWorldPoints() { return mCameraPoints; }
 	ofColor getColorAt(int x, int y);
 	ofColor getColorAt(const ofPoint & p);
 
@@ -58,7 +59,7 @@ public:
 	float getFarClipping();
 
 	void setUseTexture(bool bUse);
-
+	void setCalcCameraPoints(bool pCalc){ bCalcCameraPoints=pCalc; }
 	void draw(float x, float y, float w, float h);
 	void draw(float x, float y);
 	void draw(const ofPoint& point);
@@ -74,6 +75,9 @@ public:
 	float getHeight();
 	float getWidth();
 
+	//TODO: Move this stuff to ofxRSSDKContext?
+	ofPoint getDepthFOV();
+	ofPoint getColorFOV();
 protected:
 	bool bUseTexture;
 	ofTexture depthTex; ///< the depth texture
@@ -87,6 +91,7 @@ protected:
 
 	ofPoint rawAccel;
 	ofPoint mksAccel;
+
 
 	float targetTiltAngleDeg;
 	float currentTiltAngleDeg;
@@ -102,11 +107,9 @@ protected:
 	int tryCount;
 
 private:
-	PXCSenseManager* mRealSenseDevice;      ///< kinect device handle
-
-	vector<unsigned char> depthLookupTable;
 	void updateDepthLookupTable();
 	void updateDepthPixels();
+	void updateCameraPoints();
 
 	bool bIsFrameNew;
 	bool bNeedsUpdate;
@@ -114,10 +117,18 @@ private:
 	bool bGrabVideo;
 	bool bUseRegistration;
 	bool bNearWhite;
-
+	bool bCalcCameraPoints;
 	float nearClipping, farClipping;
 
 	bool bIsVideoInfrared;  ///< is the video image infrared or RGB?
 	int videoBytesPerPixel; ///< how many bytes per pixel in the video image
+
+	PXCSenseManager* mRealSenseDevice;      ///< kinect device handle
+	PXCProjection* mProjection;
+	vector<unsigned char> depthLookupTable;
+	vector<ofVec3f> mCameraPoints;
+
+	uint16_t *mDepthBuffer;
+
 };
 #endif

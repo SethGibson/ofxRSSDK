@@ -36,6 +36,7 @@ ofxRSSDK::ofxRSSDK()
 	bUseRegistration = false;
 	bNearWhite = true;
 
+	bCalcCameraPoints = false;
 	setDepthClipping();
 }
 
@@ -95,6 +96,8 @@ bool ofxRSSDK::init(bool pGrabVideo, bool pUseTexture)
 	bGrabberInited = mRealSenseDevice->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, width, height, 30) >= PXC_STATUS_NO_ERROR;
 	bGrabberInited = mRealSenseDevice->Init() >= PXC_STATUS_NO_ERROR;
 
+	mProjection = mRealSenseDevice->QueryCaptureManager()->QueryDevice()->CreateProjection();
+	mDepthBuffer = new uint16_t[width*height];
 	return bGrabberInited;
 }
 
@@ -117,6 +120,8 @@ void ofxRSSDK::clear()
 
 	depthTex.clear();
 	videoTex.clear();
+
+	mCameraPoints.clear();
 
 	bGrabberInited = false;
 }
@@ -188,6 +193,7 @@ void ofxRSSDK::update()
 			if (cDepthImage->AcquireAccess(PXCImage::ACCESS_READ, PXCImage::PIXEL_FORMAT_DEPTH, &cDepthData) >= PXC_STATUS_NO_ERROR)
 			{
 				depthPixelsRaw.setFromPixels(reinterpret_cast<uint16_t *>(cDepthData.planes[0]), width, height, 1);
+				memcpy(mDepthBuffer, reinterpret_cast<uint16_t *>(cDepthData.planes[0]), (size_t)(width*height*sizeof(uint16_t)));
 				cDepthImage->ReleaseAccess(&cDepthData);
 			}
 
@@ -210,6 +216,8 @@ void ofxRSSDK::update()
 	//updateDepthPixels();
 	depthTex.loadData(depthPixels.getPixels(), width, height, GL_RGBA);
 	videoTex.loadData(videoPixels.getPixels(), width, height, GL_BGRA);
+	if (bCalcCameraPoints)
+		updateCameraPoints();
 }
 
 //------------------------------------
@@ -223,16 +231,21 @@ float ofxRSSDK::getDistanceAt(const ofPoint & p) {
 }
 
 //------------------------------------
-ofVec3f ofxRSSDK::getWorldCoordinateAt(int x, int y) {
+ofVec3f ofxRSSDK::getWorldCoordinateAt(int x, int y)
+{
 	return getWorldCoordinateAt(x, y, getDistanceAt(x, y));
 }
 
 //------------------------------------
 ofVec3f ofxRSSDK::getWorldCoordinateAt(float cx, float cy, float wz)
 {
-	double wx, wy;
-	//freenect_camera_to_world(kinectDevice, cx, cy, wz, &wx, &wy);
-	return ofVec3f(wx, wy, wz);
+	PXCPoint3DF32 cDepthPoint;
+	cDepthPoint.x = cx; cDepthPoint.y = cy; cDepthPoint.z = wz;
+	PXCPoint3DF32 cDepth[1]{cDepthPoint};
+	PXCPoint3DF32 cCamera[1]{PXCPoint3DF32()};
+	mProjection->ProjectDepthToCamera(1, cDepth, cCamera);
+	
+	return ofVec3f(cCamera[0].x, cCamera[0].y, cCamera[0].z);
 }
 
 //------------------------------------
@@ -395,6 +408,18 @@ float ofxRSSDK::getWidth() {
 	return (float)width;
 }
 
+ofPoint ofxRSSDK::getDepthFOV()
+{
+	PXCPointF32 cFOV = mRealSenseDevice->QueryCaptureManager()->QueryDevice()->QueryDepthFieldOfView();
+	return ofPoint(cFOV.x, cFOV.y);
+}
+
+ofPoint ofxRSSDK::getColorFOV()
+{
+	PXCPointF32 cFOV = mRealSenseDevice->QueryCaptureManager()->QueryDevice()->QueryColorFieldOfView();
+	return ofPoint(cFOV.x, cFOV.y);
+}
+
 //---------------------------------------------------------------------------
 void ofxRSSDK::updateDepthLookupTable() {
 	unsigned char nearColor = bNearWhite ? 255 : 0;
@@ -415,6 +440,31 @@ void ofxRSSDK::updateDepthPixels() {
 	}
 	for (int i = 0; i < n; i++) {
 		depthPixels[i] = depthLookupTable[depthPixelsRaw[i]];
+	}
+}
+
+void ofxRSSDK::updateCameraPoints()
+{
+	mCameraPoints.clear();
+	vector<PXCPoint3DF32> cDepth, cCamera;
+	for (int dy = 0; dy < height;++dy)
+	{
+		for (int dx = 0; dx < width; ++dx)
+		{
+			PXCPoint3DF32 cPoint;
+			cPoint.x = dx; cPoint.y = dy; cPoint.z = (float)mDepthBuffer[dy*width + dx];
+			cDepth.push_back(cPoint);
+		}
+	}
+
+	//PXCPoint3DF32 *cCamera = new PXCPoint3DF32[cDepth.size()];
+	cCamera.resize(cDepth.size());
+	mProjection->ProjectDepthToCamera(cDepth.size(), &cDepth[0], &cCamera[0]);
+
+	for (int i = 0; i < cDepth.size();++i)
+	{
+		PXCPoint3DF32 p = cCamera[i];
+		mCameraPoints.push_back(ofVec3f(p.x, p.y, p.z));
 	}
 }
 
