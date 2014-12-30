@@ -1,7 +1,7 @@
 ofxRSSDK
 ========
 
-openFrameworks addon for the Intel RealSense SDK and hardware, based off of ofxKinect.
+openFrameworks addon for the Intel RealSense SDK and hardware, based off of ofxKinect and ofxBase3DVideo by [Theo Watson](https://github.com/ofTheo/).
 
 Currently Supported:
 * Color Stream
