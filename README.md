@@ -6,3 +6,4 @@ openFrameworks addon for the Intel RealSense SDK and hardware, based off of ofxK
 Currently Supported:
 * Color Stream
 * Depth Stream
+* Depth-to-Camera Mapping
