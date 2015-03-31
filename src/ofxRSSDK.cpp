@@ -241,8 +241,8 @@ ofVec3f ofxRSSDK::getWorldCoordinateAt(float cx, float cy, float wz)
 {
 	PXCPoint3DF32 cDepthPoint;
 	cDepthPoint.x = cx; cDepthPoint.y = cy; cDepthPoint.z = wz;
-	PXCPoint3DF32 cDepth[1]{cDepthPoint};
-	PXCPoint3DF32 cCamera[1]{PXCPoint3DF32()};
+	PXCPoint3DF32 cDepth[1] = {cDepthPoint};
+	PXCPoint3DF32 cCamera[1] = {PXCPoint3DF32()};
 	mProjection->ProjectDepthToCamera(1, cDepth, cCamera);
 	
 	return ofVec3f(cCamera[0].x, cCamera[0].y, cCamera[0].z);
