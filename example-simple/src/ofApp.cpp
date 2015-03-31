@@ -22,9 +22,13 @@ void ofApp::setup()
 		int cW = static_cast<int>(mRSSDK.getWidth());
 		int cH = static_cast<int>(mRSSDK.getHeight());
 		mDepthColorTex.allocate(cW, cH, GL_RGB);
-		mDepthColorPixels = new uint8_t[cW*cH * 3]{0};
+		mDepthColorPixels = new uint8_t[cW*cH * 3];
 		mNearColor = ofColor(255, 0, 0);
 		mFarColor = ofColor(20, 40, 255);
+
+		for (int i = 0; i < cW*cH*3; i++) {
+			mDepthColorPixels[i] = 0;
+		}
 	}
 
 }
