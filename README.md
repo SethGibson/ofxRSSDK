@@ -1,3 +1,5 @@
+_This Project IS NOT DEAD! I Apologize for the lack of updates, work's been a bear lately and sadly I don't get as much time to devote to community projects as I'd like. Change Is Coming!_
+
 ofxRSSDK
 ========
 
