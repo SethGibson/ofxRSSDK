@@ -1,4 +1,4 @@
-_This Project IS NOT DEAD! I Apologize for the lack of updates, work's been a bear lately and sadly I don't get as much time to devote to community projects as I'd like. Change Is Coming!_
+_This Project IS NOT DEAD! I Apologize for the lack of updates, work's been a bear lately and sadly I don't get as much time to devote to community projects as I'd like. Change Is Coming! ...and to that I should add they'll probably be BREAKING changes, since I want to bring the interfaces for both the ofx addon and the Cinderblock into some sort of line._
 
 ofxRSSDK
 ========
