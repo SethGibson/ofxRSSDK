@@ -1,3 +1,5 @@
+__Update 2: [A new version of ofxRSSDK is live](http://github.com/SethGibson/ofxRSSDKv2). I'm going to leave this one up for folks who might have stuff in flight, but you should definitely follow ofxRSSDKv2, which is where further development is going to take place. Apologies for the convoluted-ness__
+
 _This Project IS NOT DEAD! I Apologize for the lack of updates, work's been a bear lately and sadly I don't get as much time to devote to community projects as I'd like. Change Is Coming! ...and to that I should add they'll probably be BREAKING changes, since I want to bring the interfaces for both the ofx addon and the Cinderblock into some sort of line._
 
 ofxRSSDK
